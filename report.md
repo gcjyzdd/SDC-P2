@@ -15,16 +15,14 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/visualization.jpg "Visualization"
+[image1]: ./Data/visual_my.png "Visualization"
 [image2]: ./examples/grayscale.jpg "Grayscaling"
-[image3]: ./examples/random_noise.jpg "Random Noise"
-[image4]: ./Data/TS2_01.jpeg 
-{: height="200px" width="200px"}
-
-[image5]: ./examples/placeholder.png "Traffic Sign 2"
-[image6]: ./examples/placeholder.png "Traffic Sign 3"
-[image7]: ./examples/placeholder.png "Traffic Sign 4"
-[image8]: ./examples/placeholder.png "Traffic Sign 5"
+[image3]: ./Data/aug_example.png "Rotate"
+[image4]: ./Data/TS2_01.jpeg "Traffic Sign 1"
+[image5]: ./Data/TS2_02.jpeg "Traffic Sign 2"
+[image6]: ./Data/TS2_03.jpeg "Traffic Sign 3"
+[image7]: ./Data/TS2_04.jpeg "Traffic Sign 4"
+[image8]: ./Data/TS2_05.jpeg "Traffic Sign 5"
 
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/481/view) individually and describe how I addressed each point in my implementation.  
@@ -34,7 +32,7 @@ The goals / steps of this project are the following:
 
 #### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one. You can submit your writeup as markdown or pdf. You can use this template as a guide for writing the report. The submission includes the project code.
 
-You're reading it! and here is a link to my [project code](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb)
+You're reading it! and here is a link to my [project code](https://github.com/gcjyzdd/SDC-P2/blob/master/Traffic_Sign_Classifier_v2.ipynb)
 
 ### Data Set Summary & Exploration
 
@@ -43,15 +41,21 @@ You're reading it! and here is a link to my [project code](https://github.com/ud
 I used the pandas library to calculate summary statistics of the traffic
 signs data set:
 
-* The size of training set is ?
-* The size of the validation set is ?
-* The size of test set is ?
-* The shape of a traffic sign image is ?
-* The number of unique classes/labels in the data set is ?
+* The size of training set is 34799
+* The size of the validation set is 4410
+* The size of test set is 12630
+* The shape of a traffic sign image is 32x32x3
+* The number of unique classes/labels in the data set is 43
 
 #### 2. Include an exploratory visualization of the dataset.
 
-Here is an exploratory visualization of the data set. It is a bar chart showing how the data ...
+Here is an exploratory visualization of the data set. It is a histogram of train, validation, and test data set. From the figure below, we can see that 
+
+* all three datasets have similar distribution of traffic sign classes
+* and the size of train dataset is the largest while validation dataset is the smallest
+* from the distribution of the histogram, it also shows that the size of training images with class ID around 30 is smaller than others. 
+
+Because the size of images with class ID around 30 is smaller, our trained deep neural network performs worse with cooresponding test images.
 
 ![alt text][image1]
 
@@ -59,23 +63,29 @@ Here is an exploratory visualization of the data set. It is a bar chart showing 
 
 #### 1. Describe how you preprocessed the image data. What techniques were chosen and why did you choose these techniques? Consider including images showing the output of each preprocessing technique. Pre-processing refers to techniques such as converting to grayscale, normalization, etc. (OPTIONAL: As described in the "Stand Out Suggestions" part of the rubric, if you generated additional data for training, describe why you decided to generate additional data, how you generated the data, and provide example images of the additional data. Then describe the characteristics of the augmented training set like number of images in the set, number of images for each class, etc.)
 
-As a first step, I decided to convert the images to grayscale because ...
+As a first step, I decided to use RGB color images as they are because three channels contains more information than greyscale. Therefore, three channels gives more freedom to the DNN to fit the dataset.
 
-Here is an example of a traffic sign image before and after grayscaling.
+Next, I normalized the image data because pixel values could be 255, which is very big. When the input values are large, the neural network is more determined as the sigmoid function magnifies big values. Becase we want to train the DNN, it should be undetermined from the beginning. As a result, I normalized the image pixel value space to the section of [0.1, 0.9].
 
-![alt text][image2]
+I decided to generate additional data because the test images of traffic sign could be rotated.
 
-As a last step, I normalized the image data because ...
+To add more data to the the data set, I used the following techniques to rotate the training images:
 
-I decided to generate additional data because ... 
+```
+# Set upper and lower bounds of random variables
+lower, upper = -30, 30
+# Set the mean and standard deviation. Make the std small so that the ditribution is more uniformed
+mu, sigma = 0, 0.4
+# Get a random number generator
+gen_rand = stats.truncnorm(
+    (lower - mu) / sigma, (upper - mu) / sigma, loc=mu, scale=sigma)
+```
 
-To add more data to the the data set, I used the following techniques because ... 
+As putted in the comments above, the traing image is rotated randomly between -30 degree and 30 degree. The size of augmented dataset is `n_aug = np.floor(0.4*n_train).astype(int)`, i.e., 40% of the original dataset.
 
 Here is an example of an original image and an augmented image:
 
 ![alt text][image3]
-
-The difference between the original data set and the augmented data set is the following ... 
 
 
 #### 2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
@@ -85,15 +95,21 @@ My final model consisted of the following layers:
 | Layer         		|     Description	        					| 
 |:---------------------:|:---------------------------------------------:| 
 | Input         		| 32x32x3 RGB image   							| 
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
+| Convolution 5x5x3     | 1x1 stride, valid padding, outputs 28x28x9 	|
 | RELU					|												|
-| Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
+| Max pooling	      	| 2x2 stride,  outputs 14x14x9  				|
+| Convolution 5x5x9	    | 1x1 stride, valid pading, outputs 10x10x16    |
+| RELU                  |                                               |
+| Max pooling           | 2x2 stride, outputs 5x5x16                    |
+| Fully connected		| 400x160, outputs 160   						|
+| RELU                  |                                               |
+| Dropout               |                                               |
+| Fully connected       | 160x84, outputs 84                            |
+| RELU                  |                                               |
+| Dropout               |                                               |
 | Softmax				| etc.        									|
-|						|												|
-|						|												|
- 
+| Fully connected       | 84x43, outputs 43                             |
+
 
 
 #### 3. Describe how you trained your model. The discussion can include the type of optimizer, the batch size, number of epochs and any hyperparameters such as learning rate.
@@ -126,8 +142,8 @@ If a well known architecture was chosen:
 
 Here are five German traffic signs that I found on the web:
 
-![alt text][image4] ![alt text][image5] ![alt text][image6] 
-![alt text][image7] ![alt text][image8]
+![alt text][image4]{width=200px} ![alt text][image5]{width=200px} ![alt text][image6]{width=200px} 
+![alt text][image7]{width=200px} ![alt text][image8]{width=200px}
 
 The first image might be difficult to classify because ...
 
