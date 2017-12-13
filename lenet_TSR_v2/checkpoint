@@ -1,0 +1,6 @@
+model_checkpoint_path: "lenet_TSR_2017_12_12__07_49_16_final"
+all_model_checkpoint_paths: "lenet_TSR_2017_12_12__07_49_16_60"
+all_model_checkpoint_paths: "lenet_TSR_2017_12_12__07_49_16_70"
+all_model_checkpoint_paths: "lenet_TSR_2017_12_12__07_49_16_80"
+all_model_checkpoint_paths: "lenet_TSR_2017_12_12__07_49_16_90"
+all_model_checkpoint_paths: "lenet_TSR_2017_12_12__07_49_16_final"
